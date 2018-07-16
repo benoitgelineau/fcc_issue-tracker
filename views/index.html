@@ -59,7 +59,7 @@
         <button type="submit">Submit Issue</button>
       </form><br>
       <h3>Delete issue on <i>apitest</i></h3>
-      <form id="testForm2" class="border">
+      <form id="testForm3" class="border">
         <input type="text" name="_id" placeholder="_id" style="width: 100px" required=''><br>
         <button type="submit">Delete Issue</button>
       </form>
@@ -78,7 +78,7 @@
             type: 'post',
             data: $('#testForm').serialize(),
             success: function(data) {
-              $('#jsonResult').text(JSON.stringify(data));
+              $('#jsonResult').text(data);
             }
           });
           e.preventDefault();
@@ -89,7 +89,7 @@
             type: 'put',
             data: $('#testForm2').serialize(),
             success: function(data) {
-              $('#jsonResult').text(JSON.stringify(data));
+              $('#jsonResult').text(data);
             }
           });
           e.preventDefault();
@@ -100,7 +100,7 @@
             type: 'delete',
             data: $('#testForm3').serialize(),
             success: function(data) {
-              $('#jsonResult').text(JSON.stringify(data));
+              $('#jsonResult').text(data);
             }
           });
           e.preventDefault();
