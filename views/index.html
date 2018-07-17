@@ -78,7 +78,7 @@
             type: 'post',
             data: $('#testForm').serialize(),
             success: function(data) {
-              $('#jsonResult').text(data);
+              $('#jsonResult').text(JSON.stringify(data.msg));
             }
           });
           e.preventDefault();
@@ -100,7 +100,7 @@
             type: 'delete',
             data: $('#testForm3').serialize(),
             success: function(data) {
-              $('#jsonResult').text(data);
+              $('#jsonResult').text(JSON.stringify(data.msg));
             }
           });
           e.preventDefault();
