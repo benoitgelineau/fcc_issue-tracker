@@ -8,7 +8,6 @@
 
 'use strict';
 
-var expect = require('chai').expect;
 var ObjectId = require('mongodb').ObjectID;
 
 
@@ -18,54 +17,82 @@ module.exports = function (app, db) {
   
     .get(function (req, res){
       var project = req.params.project;
+      const fields = ['_id', 'issue_title', 'issue_text', 'created_by', 'assigned_to', 'status_text', 'created_on', 'updated_on', 'open'];
+      let queries = {};
+
+      fields.map(field => {
+        if (req.query[field]) {
+          if (field === '_id') {
+            queries[field] = ObjectId(req.query[field]);
+          } else if (field === 'open') {
+            queries[field] = req.query[field] === 'true';
+          } else {
+            queries[field] = req.query[field];
+          }
+        };
+      });
       
-      db.collection(project).find();
+      db.collection(project)
+        .find(queries)
+        .toArray((err, data) => res.send(data));
     })
     
-    .post(function (req, res, next){
+    .post(function (req, res){
       var project = req.params.project;
       
-      db.collection(project).insertOne(
-        {
-          issue_title: req.body.issue_title,
-          issue_text: req.body.issue_text,
-          created_on: new Date(),
-          updated_on: new Date(),
-          created_by: req.body.created_by,
-          assigned_to: req.body.assigned_to || '',
-          open: true,
-          status_text: req.body.status_text || ''
-        },
-        (err, data) => {
-          if (data.insertedCount === 1) res.send(`New issue created with id: ${data.insertedId}`);
-        }
-      );
+      if (!req.body.issue_title ||
+          !req.body.issue_text ||
+          !req.body.created_by) {
+
+        res.json({ msg: 'Fields required' });
+
+      } else {
+
+        db.collection(project).insertOne(
+          {
+            issue_title: req.body.issue_title,
+            issue_text: req.body.issue_text,
+            created_on: new Date(),
+            updated_on: new Date(),
+            created_by: req.body.created_by,
+            assigned_to: req.body.assigned_to || '',
+            open: true,
+            status_text: req.body.status_text || ''
+          },
+          (err, data) => {
+  
+            if (data.insertedCount === 1) {
+              res.json({ issue_title: data.ops[0].issue_title, issue_text: data.ops[0].issue_text, created_on: data.ops[0].created_on, updated_on: data.ops[0].updated_on, created_by: data.ops[0].created_by, assigned_to: data.ops[0].assigned_to, open: data.ops[0].open, status_text: data.ops[0].status_text, msg: 'New issue created' });
+            }
+          }
+        );
+      }
     })
     
     .put(function (req, res){
       var project = req.params.project;
-      let objForUpdate = {};
+      let updates = {};
 
-      if (req.body.issue_title) objForUpdate.issue_title = req.body.issue_title;
-      if (req.body.issue_text) objForUpdate.issue_text = req.body.issue_text;
-      if (req.body.created_by) objForUpdate.created_by = req.body.created_by;
-      if (req.body.assigned_to) objForUpdate.assigned_to = req.body.assigned_to;
-      if (req.body.status_text) objForUpdate.status_text = req.body.status_text;
-      if (req.body.open) objForUpdate.open = false;
+      if (req.body.issue_title) updates.issue_title = req.body.issue_title;
+      if (req.body.issue_text) updates.issue_text = req.body.issue_text;
+      if (req.body.created_by) updates.created_by = req.body.created_by;
+      if (req.body.assigned_to) updates.assigned_to = req.body.assigned_to;
+      if (req.body.status_text) updates.status_text = req.body.status_text;
+      if (req.body.open) updates.open = false;
 
       // Check for empty fields
-      if (Object.keys(objForUpdate).length === 0) {
+      if (Object.keys(updates).length === 0) {
 
         res.send('no updated field sent');
 
       } else {
 
-        objForUpdate.updated_on = new Date();
+        updates.updated_on = new Date();
         
         db.collection(project).findAndModify(
           { _id: ObjectId(req.body._id) }, 
           {},
-          { $set: objForUpdate },
+          { $set: updates },
           (err, data) => {
 
             let message;
@@ -85,7 +112,7 @@ module.exports = function (app, db) {
     .delete(function (req, res){
       var project = req.params.project;
       
-      if (!req.body._id) res.send('_id error');
+      if (!req.body._id) res.json({ msg: '_id error' });
 
       db.collection(project).deleteOne(
         { _id: ObjectId(req.body._id) },
@@ -100,7 +127,10 @@ module.exports = function (app, db) {
             message = `deleted ${req.body._id}`;
           }
 
-          res.send(message);
+          res.json({ 
+            id: req.body._id,
+            msg: message
+          });
         }
       )
     })
